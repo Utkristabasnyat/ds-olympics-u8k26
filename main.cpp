@@ -22,19 +22,22 @@ using namespace std::chrono;
 
 const int NUM_CODES = 20000;
 
+// Store the name and times for one race
+struct RaceResult {
+  string operation;
+  long long vectorTime;
+  long long listTime;
+  long long setTime;
+};
+
 int main() {
   vector<string> codes;
   list<string> codeList;
   set<string> codeSet;
 
-  // Store timing results for the four races
-  string operations[4] = {
-    "Reading", "Sorting", "Inserting", "Deleting"
-  };
+  // New races can be added to this collection
+  vector<RaceResult> results;
 
-  long long results[4][3] = {};
-
-  // Race 1: Reading into a vector
   ifstream fin("codes.txt");
 
   if (!fin) {
@@ -43,6 +46,8 @@ int main() {
   }
 
   string code;
+
+  // Race 1: Reading
   auto start = high_resolution_clock::now();
 
   while (fin >> code) {
@@ -50,14 +55,16 @@ int main() {
   }
 
   auto end = high_resolution_clock::now();
-
-  results[0][0] =
+  long long vectorTime =
     duration_cast<nanoseconds>(end - start).count();
 
   fin.close();
-
-  // Race 1: Reading into a list
   fin.open("codes.txt");
+
+  if (!fin) {
+    cout << "Error: Could not reopen codes.txt" << endl;
+    return 1;
+  }
 
   start = high_resolution_clock::now();
 
@@ -66,14 +73,16 @@ int main() {
   }
 
   end = high_resolution_clock::now();
-
-  results[0][1] =
+  long long listTime =
     duration_cast<nanoseconds>(end - start).count();
 
   fin.close();
-
-  // Race 1: Reading into a set
   fin.open("codes.txt");
+
+  if (!fin) {
+    cout << "Error: Could not reopen codes.txt" << endl;
+    return 1;
+  }
 
   start = high_resolution_clock::now();
 
@@ -82,77 +91,68 @@ int main() {
   }
 
   end = high_resolution_clock::now();
-
-  results[0][2] =
+  long long setTime =
     duration_cast<nanoseconds>(end - start).count();
 
   fin.close();
 
-  // Verify the data was loaded
+  results.push_back({"Reading", vectorTime, listTime, setTime});
+
+  // Check that all codes were read
   if (codes.size() != NUM_CODES ||
       codeList.size() != NUM_CODES) {
     cout << "Error: Incorrect number of codes." << endl;
     return 1;
   }
 
-  // Race 2: Sorting the vector
+  // Race 2: Sorting
   start = high_resolution_clock::now();
 
   sort(codes.begin(), codes.end());
 
   end = high_resolution_clock::now();
+  vectorTime = duration_cast<nanoseconds>(end - start).count();
 
-  results[1][0] =
-    duration_cast<nanoseconds>(end - start).count();
-
-  // Race 2: Sorting the list
   start = high_resolution_clock::now();
 
   codeList.sort();
 
   end = high_resolution_clock::now();
+  listTime = duration_cast<nanoseconds>(end - start).count();
 
-  results[1][1] =
-    duration_cast<nanoseconds>(end - start).count();
+  // A set is already sorted
+  setTime = -1;
 
-  // A set already maintains sorted order
-  results[1][2] = -1;
+  results.push_back({"Sorting", vectorTime, listTime, setTime});
 
-  // Race 3: Insert TESTCODE into the middle of the vector
+  // Race 3: Inserting
   start = high_resolution_clock::now();
 
   codes.insert(codes.begin() + codes.size() / 2, "TESTCODE");
 
   end = high_resolution_clock::now();
+  vectorTime = duration_cast<nanoseconds>(end - start).count();
 
-  results[2][0] =
-    duration_cast<nanoseconds>(end - start).count();
-
-  // Find the middle of the list before starting the timer
   list<string>::iterator listMiddle = codeList.begin();
   advance(listMiddle, codeList.size() / 2);
 
-  // Race 3: Insert TESTCODE into the middle of the list
   start = high_resolution_clock::now();
 
   codeList.insert(listMiddle, "TESTCODE");
 
   end = high_resolution_clock::now();
+  listTime = duration_cast<nanoseconds>(end - start).count();
 
-  results[2][1] =
-    duration_cast<nanoseconds>(end - start).count();
-
-  // Race 3: Insert TESTCODE into the set
   start = high_resolution_clock::now();
 
   codeSet.insert("TESTCODE");
 
   end = high_resolution_clock::now();
+  setTime = duration_cast<nanoseconds>(end - start).count();
 
-  results[2][2] =
-    duration_cast<nanoseconds>(end - start).count();
+  results.push_back({"Inserting", vectorTime, listTime, setTime});
 
-  // Race 4: Delete the middle element from the vector
+  // Race 4: Deleting
   vector<string>::iterator vectorMiddle =
     codes.begin() + codes.size() / 2;
 
@@ -161,39 +161,31 @@ int main() {
   codes.erase(vectorMiddle);
 
   end = high_resolution_clock::now();
+  vectorTime = duration_cast<nanoseconds>(end - start).count();
 
-  results[3][0] =
-    duration_cast<nanoseconds>(end - start).count();
-
-  // Find the middle of the list before starting the timer
   listMiddle = codeList.begin();
   advance(listMiddle, codeList.size() / 2);
 
-  // Race 4: Delete the middle element from the list
   start = high_resolution_clock::now();
 
   codeList.erase(listMiddle);
 
   end = high_resolution_clock::now();
+  listTime = duration_cast<nanoseconds>(end - start).count();
 
-  results[3][1] =
-    duration_cast<nanoseconds>(end - start).count();
-
-  // Find the middle-ish element of the set
   set<string>::iterator setMiddle = codeSet.begin();
   advance(setMiddle, codeSet.size() / 2);
 
-  // Race 4: Delete the middle-ish element from the set
   start = high_resolution_clock::now();
 
   codeSet.erase(setMiddle);
 
   end = high_resolution_clock::now();
+  setTime = duration_cast<nanoseconds>(end - start).count();
 
-  results[3][2] =
-    duration_cast<nanoseconds>(end - start).count();
+  results.push_back({"Deleting", vectorTime, listTime, setTime});
 
-  // Display the race results
+  // Display results in a table
   cout << endl << "DATA STRUCTURES RACES" << endl;
   cout << "All times in nanoseconds" << endl;
   cout << "-------------------------------------------------------"
@@ -207,12 +199,11 @@ int main() {
   cout << "-------------------------------------------------------"
        << endl;
 
-  // Display all four races
-  for (int i = 0; i < 4; i++) {
-    cout << left << setw(15) << operations[i]
-         << setw(14) << results[i][0]
-         << setw(14) << results[i][1]
-         << setw(14) << results[i][2] << endl;
+  for (size_t i = 0; i < results.size(); i++) {
+    cout << left << setw(15) << results[i].operation
+         << setw(14) << results[i].vectorTime
+         << setw(14) << results[i].listTime
+         << setw(14) << results[i].setTime << endl;
   }
 
   cout << "-------------------------------------------------------"

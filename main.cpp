@@ -152,6 +152,47 @@ int main() {
   results[2][2] =
     duration_cast<nanoseconds>(end - start).count();
 
+  // Race 4: Delete the middle element from the vector
+  vector<string>::iterator vectorMiddle =
+    codes.begin() + codes.size() / 2;
+
+  start = high_resolution_clock::now();
+
+  codes.erase(vectorMiddle);
+
+  end = high_resolution_clock::now();
+
+  results[3][0] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Find the middle of the list before starting the timer
+  listMiddle = codeList.begin();
+  advance(listMiddle, codeList.size() / 2);
+
+  // Race 4: Delete the middle element from the list
+  start = high_resolution_clock::now();
+
+  codeList.erase(listMiddle);
+
+  end = high_resolution_clock::now();
+
+  results[3][1] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Find the middle-ish element of the set
+  set<string>::iterator setMiddle = codeSet.begin();
+  advance(setMiddle, codeSet.size() / 2);
+
+  // Race 4: Delete the middle-ish element from the set
+  start = high_resolution_clock::now();
+
+  codeSet.erase(setMiddle);
+
+  end = high_resolution_clock::now();
+
+  results[3][2] =
+    duration_cast<nanoseconds>(end - start).count();
+
   // Display the race results
   cout << endl << "DATA STRUCTURES RACES" << endl;
   cout << "All times in nanoseconds" << endl;
@@ -166,8 +207,8 @@ int main() {
   cout << "-------------------------------------------------------"
        << endl;
 
-  // Display completed races
-  for (int i = 0; i < 3; i++) {
+  // Display all four races
+  for (int i = 0; i < 4; i++) {
     cout << left << setw(15) << operations[i]
          << setw(14) << results[i][0]
          << setw(14) << results[i][1]

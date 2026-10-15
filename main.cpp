@@ -15,6 +15,7 @@
 #include <chrono>
 #include <iomanip>
 #include <algorithm>
+#include <iterator>
 
 using namespace std;
 using namespace std::chrono;
@@ -26,7 +27,7 @@ int main() {
   list<string> codeList;
   set<string> codeSet;
 
-  // store timing results for the four races
+  // Store timing results for the four races
   string operations[4] = {
     "Reading", "Sorting", "Inserting", "Deleting"
   };
@@ -87,7 +88,7 @@ int main() {
 
   fin.close();
 
-  // verify the data was loaded
+  // Verify the data was loaded
   if (codes.size() != NUM_CODES ||
       codeList.size() != NUM_CODES) {
     cout << "Error: Incorrect number of codes." << endl;
@@ -114,10 +115,44 @@ int main() {
   results[1][1] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // A set automatically maintains sorted order
+  // A set already maintains sorted order
   results[1][2] = -1;
 
-  // display the race results
+  // Race 3: Insert TESTCODE into the middle of the vector
+  start = high_resolution_clock::now();
+
+  codes.insert(codes.begin() + codes.size() / 2, "TESTCODE");
+
+  end = high_resolution_clock::now();
+
+  results[2][0] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Find the middle of the list before starting the timer
+  list<string>::iterator listMiddle = codeList.begin();
+  advance(listMiddle, codeList.size() / 2);
+
+  // Race 3: Insert TESTCODE into the middle of the list
+  start = high_resolution_clock::now();
+
+  codeList.insert(listMiddle, "TESTCODE");
+
+  end = high_resolution_clock::now();
+
+  results[2][1] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Race 3: Insert TESTCODE into the set
+  start = high_resolution_clock::now();
+
+  codeSet.insert("TESTCODE");
+
+  end = high_resolution_clock::now();
+
+  results[2][2] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Display the race results
   cout << endl << "DATA STRUCTURES RACES" << endl;
   cout << "All times in nanoseconds" << endl;
   cout << "-------------------------------------------------------"
@@ -131,8 +166,8 @@ int main() {
   cout << "-------------------------------------------------------"
        << endl;
 
-  // display completed races
-  for (int i = 0; i < 2; i++) {
+  // Display completed races
+  for (int i = 0; i < 3; i++) {
     cout << left << setw(15) << operations[i]
          << setw(14) << results[i][0]
          << setw(14) << results[i][1]

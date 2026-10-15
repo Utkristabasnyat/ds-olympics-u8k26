@@ -14,6 +14,7 @@
 #include <string>
 #include <chrono>
 #include <iomanip>
+#include <algorithm>
 
 using namespace std;
 using namespace std::chrono;
@@ -25,7 +26,7 @@ int main() {
   list<string> codeList;
   set<string> codeSet;
 
-  // store the timing results for each race
+  // store timing results for the four races
   string operations[4] = {
     "Reading", "Sorting", "Inserting", "Deleting"
   };
@@ -86,12 +87,35 @@ int main() {
 
   fin.close();
 
-  // check that the data was loaded
+  // verify the data was loaded
   if (codes.size() != NUM_CODES ||
       codeList.size() != NUM_CODES) {
     cout << "Error: Incorrect number of codes." << endl;
     return 1;
   }
+
+  // Race 2: Sorting the vector
+  start = high_resolution_clock::now();
+
+  sort(codes.begin(), codes.end());
+
+  end = high_resolution_clock::now();
+
+  results[1][0] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Race 2: Sorting the list
+  start = high_resolution_clock::now();
+
+  codeList.sort();
+
+  end = high_resolution_clock::now();
+
+  results[1][1] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // A set automatically maintains sorted order
+  results[1][2] = -1;
 
   // display the race results
   cout << endl << "DATA STRUCTURES RACES" << endl;
@@ -107,10 +131,13 @@ int main() {
   cout << "-------------------------------------------------------"
        << endl;
 
-  cout << left << setw(15) << operations[0]
-       << setw(14) << results[0][0]
-       << setw(14) << results[0][1]
-       << setw(14) << results[0][2] << endl;
+  // display completed races
+  for (int i = 0; i < 2; i++) {
+    cout << left << setw(15) << operations[i]
+         << setw(14) << results[i][0]
+         << setw(14) << results[i][1]
+         << setw(14) << results[i][2] << endl;
+  }
 
   cout << "-------------------------------------------------------"
        << endl;

@@ -2,7 +2,7 @@
 /*
   Name: Utkrista Mardan Basnyat
   Course: COMSC-210 Data Structures
-  Lab 25: Data Structures Races
+  Lab 26: Data Structures Olympics
   File: main.cpp
 */
 

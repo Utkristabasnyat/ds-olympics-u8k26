@@ -13,7 +13,6 @@
 #include <set>
 #include <string>
 #include <chrono>
-#include <iomanip>
 #include <algorithm>
 #include <iterator>
 
@@ -21,49 +20,48 @@ using namespace std;
 using namespace std::chrono;
 
 const int NUM_CODES = 20000;
+const int NUM_RUNS = 15;
+const int NUM_RACES = 4;
+const int NUM_STRUCTURES = 3;
 
-// Store the name and times for one race
-struct RaceResult {
-  string operation;
-  long long vectorTime;
-  long long listTime;
-  long long setTime;
-};
-
-int main() {
+// 3D array:
+// [0] = results for the current simulation
+// [1] = accumulated results from all simulations
+// Rows = Reading, Sorting, Inserting, Deleting
+// Columns = Vector, List, Set
+void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   vector<string> codes;
   list<string> codeList;
   set<string> codeSet;
-
-  // New races can be added to this collection
-  vector<RaceResult> results;
-
-  ifstream fin("codes.txt");
-
-  if (!fin) {
-    cout << "Error: Could not open codes.txt" << endl;
-    return 1;
-  }
-
   string code;
 
-  // Race 1: Reading
   auto start = high_resolution_clock::now();
+  auto end = high_resolution_clock::now();
+
+  // Race 1: Reading into vector
+  ifstream fin("codes.txt");
+  if (!fin) {
+    cout << "Error opening codes.txt" << endl;
+    exit(1);
+  }
+
+  start = high_resolution_clock::now();
 
   while (fin >> code) {
     codes.push_back(code);
   }
 
-  auto end = high_resolution_clock::now();
-  long long vectorTime =
+  end = high_resolution_clock::now();
+  results[0][0][0] =
     duration_cast<nanoseconds>(end - start).count();
-
   fin.close();
+
+  // Race 1: Reading into list
   fin.open("codes.txt");
 
   if (!fin) {
-    cout << "Error: Could not reopen codes.txt" << endl;
-    return 1;
+    cout << "Error opening codes.txt" << endl;
+    exit(1);
   }
 
   start = high_resolution_clock::now();
@@ -73,15 +71,16 @@ int main() {
   }
 
   end = high_resolution_clock::now();
-  long long listTime =
+  results[0][0][1] =
     duration_cast<nanoseconds>(end - start).count();
-
   fin.close();
+
+  // Race 1: Reading into set
   fin.open("codes.txt");
 
   if (!fin) {
-    cout << "Error: Could not reopen codes.txt" << endl;
-    return 1;
+    cout << "Error opening codes.txt" << endl;
+    exit(1);
   }
 
   start = high_resolution_clock::now();
@@ -91,127 +90,135 @@ int main() {
   }
 
   end = high_resolution_clock::now();
-  long long setTime =
+  results[0][0][2] =
     duration_cast<nanoseconds>(end - start).count();
-
   fin.close();
 
-  results.push_back({"Reading", vectorTime, listTime, setTime});
-
-  // Check that all codes were read
   if (codes.size() != NUM_CODES ||
       codeList.size() != NUM_CODES) {
     cout << "Error: Incorrect number of codes." << endl;
-    return 1;
+    exit(1);
   }
 
-  // Race 2: Sorting
+  // Race 2: Sorting vector
   start = high_resolution_clock::now();
-
   sort(codes.begin(), codes.end());
-
   end = high_resolution_clock::now();
-  vectorTime = duration_cast<nanoseconds>(end - start).count();
 
+  results[0][1][0] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Race 2: Sorting list
   start = high_resolution_clock::now();
-
   codeList.sort();
-
   end = high_resolution_clock::now();
-  listTime = duration_cast<nanoseconds>(end - start).count();
 
-  // A set is already sorted
-  setTime = -1;
+  results[0][1][1] =
+    duration_cast<nanoseconds>(end - start).count();
 
-  results.push_back({"Sorting", vectorTime, listTime, setTime});
+  // Set is already sorted, so no sorting time
+  results[0][1][2] = 0;
 
-  // Race 3: Inserting
+  // Race 3: Inserting into vector
   start = high_resolution_clock::now();
-
   codes.insert(codes.begin() + codes.size() / 2, "TESTCODE");
-
   end = high_resolution_clock::now();
-  vectorTime = duration_cast<nanoseconds>(end - start).count();
 
+  results[0][2][0] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Find the middle of list before timing
   list<string>::iterator listMiddle = codeList.begin();
   advance(listMiddle, codeList.size() / 2);
 
   start = high_resolution_clock::now();
-
   codeList.insert(listMiddle, "TESTCODE");
-
   end = high_resolution_clock::now();
-  listTime = duration_cast<nanoseconds>(end - start).count();
 
+  results[0][2][1] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Race 3: Inserting into set
   start = high_resolution_clock::now();
-
   codeSet.insert("TESTCODE");
-
   end = high_resolution_clock::now();
-  setTime = duration_cast<nanoseconds>(end - start).count();
 
-  results.push_back({"Inserting", vectorTime, listTime, setTime});
+  results[0][2][2] =
+    duration_cast<nanoseconds>(end - start).count();
 
-  // Race 4: Deleting
+  // Race 4: Deleting from vector
   vector<string>::iterator vectorMiddle =
     codes.begin() + codes.size() / 2;
 
   start = high_resolution_clock::now();
-
   codes.erase(vectorMiddle);
-
   end = high_resolution_clock::now();
-  vectorTime = duration_cast<nanoseconds>(end - start).count();
 
+  results[0][3][0] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Race 4: Deleting from list
   listMiddle = codeList.begin();
   advance(listMiddle, codeList.size() / 2);
 
   start = high_resolution_clock::now();
-
   codeList.erase(listMiddle);
-
   end = high_resolution_clock::now();
-  listTime = duration_cast<nanoseconds>(end - start).count();
 
+  results[0][3][1] =
+    duration_cast<nanoseconds>(end - start).count();
+
+  // Race 4: Deleting from set
   set<string>::iterator setMiddle = codeSet.begin();
   advance(setMiddle, codeSet.size() / 2);
 
   start = high_resolution_clock::now();
-
   codeSet.erase(setMiddle);
-
   end = high_resolution_clock::now();
-  setTime = duration_cast<nanoseconds>(end - start).count();
 
-  results.push_back({"Deleting", vectorTime, listTime, setTime});
+  results[0][3][2] =
+    duration_cast<nanoseconds>(end - start).count();
+}
 
-  // Display results in a table
-  cout << endl << "DATA STRUCTURES RACES" << endl;
-  cout << "All times in nanoseconds" << endl;
-  cout << "-------------------------------------------------------"
-       << endl;
+int main() {
+  // Two slices, four races, three data structures
+  long long results[2][NUM_RACES][NUM_STRUCTURES] = {};
 
-  cout << left << setw(15) << "Operation"
-       << setw(14) << "Vector"
-       << setw(14) << "List"
-       << setw(14) << "Set" << endl;
+  string operations[NUM_RACES] = {
+    "Reading", "Sorting", "Inserting", "Deleting"
+  };
 
-  cout << "-------------------------------------------------------"
-       << endl;
+  // Run the complete experiment 15 times
+  for (int run = 0; run < NUM_RUNS; run++) {
+    runSimulation(results);
 
-  for (size_t i = 0; i < results.size(); i++) {
-    cout << left << setw(15) << results[i].operation
-         << setw(14) << results[i].vectorTime
-         << setw(14) << results[i].listTime
-         << setw(14) << results[i].setTime << endl;
+    // Add the current results to the accumulated totals
+    for (int race = 0; race < NUM_RACES; race++) {
+      for (int structure = 0; structure < NUM_STRUCTURES;
+           structure++) {
+        results[1][race][structure] +=
+          results[0][race][structure];
+      }
+    }
+
+    cout << "Simulation " << run + 1 << " completed." << endl;
   }
 
-  cout << "-------------------------------------------------------"
-       << endl;
+  // Temporary output for Milestone 2
+  cout << endl;
+  cout << "Number of simulations: " << NUM_RUNS << endl;
+  cout << "Average times in nanoseconds:" << endl;
 
-  cout << "Vector elements: " << codes.size() << endl;
-  cout << "List elements: " << codeList.size() << endl;
-  cout << "Set elements: " << codeSet.size() << endl;
+  for (int race = 0; race < NUM_RACES; race++) {
+    cout << operations[race] << ": ";
+
+    for (int structure = 0; structure < NUM_STRUCTURES;
+         structure++) {
+      cout << results[1][race][structure] / NUM_RUNS << " ";
+    }
+
+    cout << endl;
+  }
 
   return 0;
 }

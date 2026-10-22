@@ -26,12 +26,17 @@ const int NUM_RUNS = 15;
 const int NUM_RACES = 4;
 const int NUM_STRUCTURES = 3;
 
-// 3D array:
-// Slice 0 = times from the current simulation
-// Slice 1 = accumulated times from all simulations
+// The two slices of our 3D array
+const int CURRENT = 0;
+const int TOTAL = 1;
+
+// 3D results array:
+// Slice CURRENT = times from one simulation
+// Slice TOTAL = sum of times from all simulations
 // Rows = Read, Sort, Insert, Delete
 // Columns = Vector, List, Set
 void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
+  // Fresh containers for each simulation
   vector<string> codes;
   list<string> codeList;
   set<string> codeSet;
@@ -40,7 +45,7 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   auto start = high_resolution_clock::now();
   auto end = high_resolution_clock::now();
 
-  // Race 1: Reading into vector
+  // Race 1: Read 20,000 codes into a vector
   ifstream fin("codes.txt");
   if (!fin) {
     cout << "Error opening codes.txt" << endl;
@@ -54,11 +59,11 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   }
 
   end = high_resolution_clock::now();
-  results[0][0][0] =
+  results[CURRENT][0][0] =
     duration_cast<nanoseconds>(end - start).count();
   fin.close();
 
-  // Race 1: Reading into list
+  // Race 1: Read the same codes into a list
   fin.open("codes.txt");
 
   if (!fin) {
@@ -73,11 +78,11 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   }
 
   end = high_resolution_clock::now();
-  results[0][0][1] =
+  results[CURRENT][0][1] =
     duration_cast<nanoseconds>(end - start).count();
   fin.close();
 
-  // Race 1: Reading into set
+  // Race 1: Read the same codes into a set
   fin.open("codes.txt");
 
   if (!fin) {
@@ -92,44 +97,45 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   }
 
   end = high_resolution_clock::now();
-  results[0][0][2] =
+  results[CURRENT][0][2] =
     duration_cast<nanoseconds>(end - start).count();
   fin.close();
 
+  // Check that all codes were read
   if (codes.size() != NUM_CODES ||
       codeList.size() != NUM_CODES) {
     cout << "Error: Incorrect number of codes." << endl;
     exit(1);
   }
 
-  // Race 2: Sorting vector
+  // Race 2: Sort the vector
   start = high_resolution_clock::now();
   sort(codes.begin(), codes.end());
   end = high_resolution_clock::now();
 
-  results[0][1][0] =
+  results[CURRENT][1][0] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // Race 2: Sorting list
+  // Race 2: Sort the list
   start = high_resolution_clock::now();
   codeList.sort();
   end = high_resolution_clock::now();
 
-  results[0][1][1] =
+  results[CURRENT][1][1] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // A set is already sorted
-  results[0][1][2] = 0;
+  // Set is automatically sorted, so its sort time is zero
+  results[CURRENT][1][2] = 0;
 
-  // Race 3: Inserting into vector
+  // Race 3: Insert TESTCODE into the middle of vector
   start = high_resolution_clock::now();
   codes.insert(codes.begin() + codes.size() / 2, "TESTCODE");
   end = high_resolution_clock::now();
 
-  results[0][2][0] =
+  results[CURRENT][2][0] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // Find the middle of the list before timing
+  // Find list's middle before timing the insertion
   list<string>::iterator listMiddle = codeList.begin();
   advance(listMiddle, codeList.size() / 2);
 
@@ -137,18 +143,18 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   codeList.insert(listMiddle, "TESTCODE");
   end = high_resolution_clock::now();
 
-  results[0][2][1] =
+  results[CURRENT][2][1] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // Race 3: Inserting into set
+  // Race 3: Insert TESTCODE into the set
   start = high_resolution_clock::now();
   codeSet.insert("TESTCODE");
   end = high_resolution_clock::now();
 
-  results[0][2][2] =
+  results[CURRENT][2][2] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // Race 4: Deleting from vector
+  // Race 4: Delete the middle element of vector
   vector<string>::iterator vectorMiddle =
     codes.begin() + codes.size() / 2;
 
@@ -156,10 +162,10 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   codes.erase(vectorMiddle);
   end = high_resolution_clock::now();
 
-  results[0][3][0] =
+  results[CURRENT][3][0] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // Race 4: Deleting from list
+  // Find list's middle before timing the deletion
   listMiddle = codeList.begin();
   advance(listMiddle, codeList.size() / 2);
 
@@ -167,10 +173,10 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   codeList.erase(listMiddle);
   end = high_resolution_clock::now();
 
-  results[0][3][1] =
+  results[CURRENT][3][1] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // Race 4: Deleting from set
+  // Find the middle-ish set element before timing
   set<string>::iterator setMiddle = codeSet.begin();
   advance(setMiddle, codeSet.size() / 2);
 
@@ -178,32 +184,33 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   codeSet.erase(setMiddle);
   end = high_resolution_clock::now();
 
-  results[0][3][2] =
+  results[CURRENT][3][2] =
     duration_cast<nanoseconds>(end - start).count();
 }
 
 int main() {
+  // Two slices, four races, three data structures
   long long results[2][NUM_RACES][NUM_STRUCTURES] = {};
 
   string operations[NUM_RACES] = {
     "Read", "Sort", "Insert", "Delete"
   };
 
-  // Run the experiment 15 times
+  // Repeat the entire experiment 15 times
   for (int run = 0; run < NUM_RUNS; run++) {
     runSimulation(results);
 
-    // Add current times to the accumulated totals
+    // Add this simulation's times to the totals
     for (int race = 0; race < NUM_RACES; race++) {
       for (int structure = 0; structure < NUM_STRUCTURES;
            structure++) {
-        results[1][race][structure] +=
-          results[0][race][structure];
+        results[TOTAL][race][structure] +=
+          results[CURRENT][race][structure];
       }
     }
   }
 
-  // Display average times in nanoseconds
+  // Display the average time for each operation
   cout << "Number of simulations: " << NUM_RUNS << endl;
 
   cout << right << setw(10) << "Operation"
@@ -216,8 +223,9 @@ int main() {
 
     for (int structure = 0; structure < NUM_STRUCTURES;
          structure++) {
+      // Average = total nanoseconds / number of runs
       cout << setw(12)
-           << results[1][race][structure] / NUM_RUNS;
+           << results[TOTAL][race][structure] / NUM_RUNS;
     }
 
     cout << endl;

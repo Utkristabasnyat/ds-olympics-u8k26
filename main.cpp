@@ -15,6 +15,8 @@
 #include <chrono>
 #include <algorithm>
 #include <iterator>
+#include <iomanip>
+#include <cstdlib>
 
 using namespace std;
 using namespace std::chrono;
@@ -25,9 +27,9 @@ const int NUM_RACES = 4;
 const int NUM_STRUCTURES = 3;
 
 // 3D array:
-// [0] = results for the current simulation
-// [1] = accumulated results from all simulations
-// Rows = Reading, Sorting, Inserting, Deleting
+// Slice 0 = times from the current simulation
+// Slice 1 = accumulated times from all simulations
+// Rows = Read, Sort, Insert, Delete
 // Columns = Vector, List, Set
 void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   vector<string> codes;
@@ -116,7 +118,7 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   results[0][1][1] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // Set is already sorted, so no sorting time
+  // A set is already sorted
   results[0][1][2] = 0;
 
   // Race 3: Inserting into vector
@@ -127,7 +129,7 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
   results[0][2][0] =
     duration_cast<nanoseconds>(end - start).count();
 
-  // Find the middle of list before timing
+  // Find the middle of the list before timing
   list<string>::iterator listMiddle = codeList.begin();
   advance(listMiddle, codeList.size() / 2);
 
@@ -181,18 +183,17 @@ void runSimulation(long long results[2][NUM_RACES][NUM_STRUCTURES]) {
 }
 
 int main() {
-  // Two slices, four races, three data structures
   long long results[2][NUM_RACES][NUM_STRUCTURES] = {};
 
   string operations[NUM_RACES] = {
-    "Reading", "Sorting", "Inserting", "Deleting"
+    "Read", "Sort", "Insert", "Delete"
   };
 
-  // Run the complete experiment 15 times
+  // Run the experiment 15 times
   for (int run = 0; run < NUM_RUNS; run++) {
     runSimulation(results);
 
-    // Add the current results to the accumulated totals
+    // Add current times to the accumulated totals
     for (int race = 0; race < NUM_RACES; race++) {
       for (int structure = 0; structure < NUM_STRUCTURES;
            structure++) {
@@ -200,21 +201,23 @@ int main() {
           results[0][race][structure];
       }
     }
-
-    cout << "Simulation " << run + 1 << " completed." << endl;
   }
 
-  // Temporary output for Milestone 2
-  cout << endl;
+  // Display average times in nanoseconds
   cout << "Number of simulations: " << NUM_RUNS << endl;
-  cout << "Average times in nanoseconds:" << endl;
+
+  cout << right << setw(10) << "Operation"
+       << setw(12) << "Vector"
+       << setw(12) << "List"
+       << setw(12) << "Set" << endl;
 
   for (int race = 0; race < NUM_RACES; race++) {
-    cout << operations[race] << ": ";
+    cout << right << setw(10) << operations[race];
 
     for (int structure = 0; structure < NUM_STRUCTURES;
          structure++) {
-      cout << results[1][race][structure] / NUM_RUNS << " ";
+      cout << setw(12)
+           << results[1][race][structure] / NUM_RUNS;
     }
 
     cout << endl;
